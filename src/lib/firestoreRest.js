@@ -240,15 +240,31 @@ export async function setGuest(guest, idToken) {
 // Path: apps/mahjong/users/{uid}
 
 export async function getUsers(idToken) {
-  const data = await firestoreRequest(
-    "apps/mahjong/users",
-    { headers: { "Content-Type": "application/json", ...authHeader(idToken) } }
-  );
-  if (!data?.documents) return [];
-  return data.documents.map(doc => ({
-    id: docNameToId(doc.name),
-    ...fromDoc(doc),
-  }));
+  const body = JSON.stringify({
+    structuredQuery: {
+      from: [{ collectionId: "users" }],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: "status" },
+          op: "EQUAL",
+          value: { stringValue: "approved" },
+        },
+      },
+    },
+  });
+  const res = await fetch(`${BASE_URL}:runQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader(idToken) },
+    body,
+  });
+  const data = await res.json();
+  if (!Array.isArray(data)) return [];
+  return data
+    .filter(r => r.document)
+    .map(r => ({
+      id: docNameToId(r.document.name),
+      ...fromDoc(r.document),
+    }));
 }
 
 export async function getUser(uid, idToken) {
