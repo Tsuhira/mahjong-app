@@ -61,7 +61,7 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
         }));
         setPlayers(gamePlayers);
         setRawScores(game.results.map(r => String(r.rawScore)));
-        setChips(game.results.map(r => String(r.chips ?? 0)));
+        setChips(game.results.map(r => r.chips ? String(r.chips) : ""));
         setStep(2);
       }
       setLoading(false);
@@ -76,7 +76,7 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
       : sessionParticipants.slice(0, count);
     setPlayers(initial);
     setRawScores(new Array(count).fill(""));
-    setChips(new Array(count).fill("0"));
+    setChips(new Array(count).fill(""));
     setStep(1);
   }
 

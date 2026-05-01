@@ -31,7 +31,7 @@ function emptyForm(playerCount = 4) {
     playerCount,
     initialPoints: 25000,
     returnPoints: 30000,
-    uma: playerCount === 3 ? [20, 0, -20] : [20, 10, -10, -20],
+    uma: playerCount === 3 ? ["20", "", "-20"] : ["20", "10", "-10", "-20"],
     hasChip: false,
     chipRate: 0,
   };
@@ -76,7 +76,7 @@ export default function Settings({ user }) {
     setSaving(true);
     setError(null);
     try {
-      await setRule(editing, user?.idToken);
+      await setRule({ ...editing, uma: editing.uma.map(v => parseFloat(v) || 0) }, user?.idToken);
       await loadRules();
       setEditing(null);
     } catch (e) {
@@ -101,14 +101,14 @@ export default function Settings({ user }) {
     setEditing(prev => ({
       ...prev,
       playerCount: pc,
-      uma: pc === 3 ? [20, 0, -20] : [20, 10, -10, -20],
+      uma: pc === 3 ? ["20", "", "-20"] : ["20", "10", "-10", "-20"],
     }));
   }
 
   function handleUmaChange(index, value) {
     setEditing(prev => {
       const uma = [...prev.uma];
-      uma[index] = Number(value);
+      uma[index] = value;
       return { ...prev, uma };
     });
   }
@@ -251,7 +251,7 @@ export default function Settings({ user }) {
               <div style={s.itemActions}>
                 <button
                   style={s.editBtn}
-                  onClick={() => { setError(null); setEditing({ ...rule }); }}
+                  onClick={() => { setError(null); setEditing({ ...rule, uma: rule.uma.map(v => v === 0 ? "" : String(v)) }); }}
                 >
                   編集
                 </button>
