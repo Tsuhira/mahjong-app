@@ -4,6 +4,7 @@ import Layout from "./components/Layout";
 import SessionList from "./pages/SessionList";
 import SessionDetail from "./pages/SessionDetail";
 import GameForm from "./pages/GameForm";
+import Settlement from "./pages/Settlement";
 import Ranking from "./pages/Ranking";
 import Settings from "./pages/Settings";
 
@@ -35,6 +36,8 @@ export default function App() {
         return <SessionDetail sessionId={page.params?.sessionId} user={user} onNavigate={navigate} />;
       case "game-form":
         return <GameForm sessionId={page.params?.sessionId} gameId={page.params?.gameId} sessionParticipants={page.params?.sessionParticipants} user={user} onNavigate={navigate} />;
+      case "settlement":
+        return <Settlement sessionId={page.params?.sessionId} user={user} onNavigate={navigate} />;
       case "ranking":
         return <Ranking user={user} />;
       case "settings":

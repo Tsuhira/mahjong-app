@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { getSession, getGames, setSession, deleteGame, getUsers, setUser, getKumaMembers, getGuests, setGuest } from "../lib/firestoreRest";
-import { ArrowLeft, Plus, Check, Pencil, Trash2, ToggleLeft, ToggleRight, UserPlus, X } from "lucide-react";
+import { getSession, getGames, setSession, deleteGame, getKumaMembers, getGuests, setGuest } from "../lib/firestoreRest";
+import { ArrowLeft, Plus, Check, Pencil, Trash2, UserPlus, X, Receipt } from "lucide-react";
 
 const c = {
   bg: "#0f172a",
@@ -18,7 +18,6 @@ export default function SessionDetail({ sessionId, user, onNavigate }) {
   const [session, setSessionData] = useState(null);
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [settling, setSettling] = useState(false);
   const [editingParticipants, setEditingParticipants] = useState(false);
 
   useEffect(() => {
@@ -87,48 +86,6 @@ export default function SessionDetail({ sessionId, user, onNavigate }) {
     }
   }
 
-  async function handleSettle(settled) {
-    if (!user || settling) return;
-    setSettling(true);
-    try {
-      const now = new Date().toISOString();
-      await setSession({
-        ...session,
-        settled,
-        settledAt: settled ? now : null,
-      }, user.idToken);
-
-      if (settled) {
-        const memberTotals = {};
-        for (const g of games) {
-          for (const r of (g.results ?? [])) {
-            if (r.type !== "member") continue;
-            if (!memberTotals[r.uid]) memberTotals[r.uid] = { pts: 0, cnt: 0 };
-            memberTotals[r.uid].pts += r.finalScore ?? 0;
-            memberTotals[r.uid].cnt += 1;
-          }
-        }
-        const allUsers = await getUsers(user.idToken);
-        await Promise.all(
-          Object.entries(memberTotals).map(([uid, t]) => {
-            const u = allUsers.find(u => u.id === uid) ?? {};
-            return setUser(uid, {
-              totalPoints: (u.totalPoints ?? 0) + t.pts,
-              totalGames: (u.totalGames ?? 0) + t.cnt,
-              lastPlayedAt: now,
-            }, user.idToken);
-          })
-        );
-      }
-
-      await loadData();
-    } catch (e) {
-      console.error("handleSettle failed", e);
-    } finally {
-      setSettling(false);
-    }
-  }
-
   function formatDate(dateStr) {
     if (!dateStr) return "日付不明";
     const [y, m, d] = dateStr.split("-");
@@ -193,34 +150,20 @@ export default function SessionDetail({ sessionId, user, onNavigate }) {
         />
       )}
 
-      {/* Settled toggle */}
+      {/* Settled status / button */}
       <div style={s.settleRow}>
         {session.settled ? (
-          <>
-            <span style={s.settledBadge}>
-              <Check size={14} /> 精算済み
-            </span>
-            {user && (
-              <button
-                style={s.unsettleBtn}
-                onClick={() => handleSettle(false)}
-                disabled={settling}
-              >
-                {settling ? "処理中…" : "取り消す"}
-              </button>
-            )}
-          </>
-        ) : (
-          user && (
-            <button
-              style={{ ...s.settleBtn, opacity: (settling || games.length === 0) ? 0.5 : 1 }}
-              onClick={() => handleSettle(true)}
-              disabled={settling || games.length === 0}
-            >
-              {settling ? "処理中…" : <><ToggleLeft size={16} /> 精算済みにする</>}
-            </button>
-          )
-        )}
+          <span style={s.settledBadge}>
+            <Check size={14} /> 精算済み
+          </span>
+        ) : null}
+        <button
+          style={{ ...s.settleBtn, opacity: games.length === 0 ? 0.5 : 1 }}
+          disabled={games.length === 0}
+          onClick={() => onNavigate("settlement", { sessionId })}
+        >
+          <Receipt size={15} /> 精算へ
+        </button>
       </div>
 
       {/* Add game button */}
