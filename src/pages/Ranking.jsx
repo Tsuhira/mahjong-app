@@ -97,11 +97,11 @@ export default function Ranking({ user }) {
                 return (
                   <div key={idx} style={s.podiumItem}>
                     <div style={s.podiumMedal}>{MEDAL[idx]}</div>
-                    <div style={s.podiumName}>{u.name ?? u.id}</div>
+                    <div style={s.podiumName}>{u.displayName ?? u.id}</div>
                     <div style={{ ...s.podiumScore, color: MEDAL_COLORS[idx] }}>
                       {fmtScore(score)}
                     </div>
-                    <div style={s.podiumGames}>{u.gameCount ?? 0}戦</div>
+                    <div style={s.podiumGames}>{u.totalGames ?? 0}戦</div>
                     <div style={{
                       ...s.podiumBase,
                       height: PODIUM_HEIGHTS[idx],
@@ -134,12 +134,12 @@ export default function Ranking({ user }) {
                       <tr key={u.id} style={{ borderBottom: "1px solid #1e2d40" }}>
                         <td style={{ ...s.td, color: "#64748b", fontSize: 12 }}>{i + 4}位</td>
                         <td style={{ ...s.td, textAlign: "left", fontWeight: "500", color: "#f1f5f9" }}>
-                          {u.name ?? u.id}
+                          {u.displayName ?? u.id}
                         </td>
                         <td style={{ ...s.td, fontWeight: "bold", color: score >= 0 ? "#4ade80" : "#f87171" }}>
                           {fmtScore(score)}
                         </td>
-                        <td style={{ ...s.td, color: "#64748b" }}>{u.gameCount ?? 0}</td>
+                        <td style={{ ...s.td, color: "#64748b" }}>{u.totalGames ?? 0}</td>
                         <td style={{ ...s.td, color: "#64748b", fontSize: 11 }}>{fmtDate(u.lastPlayedAt)}</td>
                       </tr>
                     );
@@ -169,12 +169,12 @@ export default function Ranking({ user }) {
                       <tr key={u.id} style={{ borderBottom: "1px solid #1e2d40" }}>
                         <td style={{ ...s.td }}>{MEDAL[i]}</td>
                         <td style={{ ...s.td, textAlign: "left", fontWeight: "500", color: "#f1f5f9" }}>
-                          {u.name ?? u.id}
+                          {u.displayName ?? u.id}
                         </td>
                         <td style={{ ...s.td, fontWeight: "bold", color: score >= 0 ? "#4ade80" : "#f87171" }}>
                           {fmtScore(score)}
                         </td>
-                        <td style={{ ...s.td, color: "#64748b" }}>{u.gameCount ?? 0}</td>
+                        <td style={{ ...s.td, color: "#64748b" }}>{u.totalGames ?? 0}</td>
                         <td style={{ ...s.td, color: "#64748b", fontSize: 11 }}>{fmtDate(u.lastPlayedAt)}</td>
                       </tr>
                     );

@@ -264,8 +264,11 @@ export async function getUser(uid, idToken) {
 }
 
 export async function setUser(uid, userData, idToken) {
+  const maskParams = Object.keys(userData)
+    .map(k => `updateMask.fieldPaths=${encodeURIComponent(k)}`)
+    .join("&");
   const body = JSON.stringify(toDoc(userData));
-  await firestoreRequest(`apps/mahjong/users/${uid}`, {
+  await firestoreRequest(`apps/mahjong/users/${uid}?${maskParams}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...authHeader(idToken) },
     body,

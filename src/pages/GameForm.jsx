@@ -131,11 +131,11 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
           if (p.type !== "member" || !p.uid) return;
           const current = await getUser(p.uid, user?.idToken);
           const prevTotal = current?.totalPoints ?? 0;
-          const prevCount = current?.gameCount ?? 0;
+          const prevCount = current?.totalGames ?? 0;
           await setUser(p.uid, {
-            name: p.name,
+            displayName: p.name,
             totalPoints: Math.round((prevTotal + preview.finalScores[i]) * 10) / 10,
-            gameCount: prevCount + 1,
+            totalGames: prevCount + 1,
             lastPlayedAt: now,
           }, user?.idToken);
         })
