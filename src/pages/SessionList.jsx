@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getSessions, setSession, getUsers, getGuests, setGuest } from "../lib/firestoreRest";
+import { getSessions, setSession, getKumaMembers, getGuests, setGuest } from "../lib/firestoreRest";
 import { Plus, Check, ChevronRight, UserPlus } from "lucide-react";
 
 const c = {
@@ -125,7 +125,7 @@ function CreateModal({ user, onCreated, onClose }) {
 
   useEffect(() => {
     Promise.all([
-      getUsers(user?.idToken).catch(() => []),
+      getKumaMembers(user?.idToken).catch(() => []),
       getGuests(user?.idToken).catch(() => []),
     ]).then(([u, g]) => {
       setMembers(u);

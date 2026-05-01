@@ -82,11 +82,11 @@ function docNameToId(name) {
 }
 
 // --- Rules ---
-// Path: apps/mahjong/config/rules/{ruleId}
+// Path: apps/mahjong/rules/{ruleId}
 
 export async function getRules(idToken) {
   const data = await firestoreRequest(
-    "apps/mahjong/config/rules",
+    "apps/mahjong/rules",
     { headers: { "Content-Type": "application/json", ...authHeader(idToken) } }
   );
   if (!data?.documents) return [];
@@ -100,13 +100,13 @@ export async function setRule(rule, idToken) {
   const { id, ...fields } = rule;
   const body = JSON.stringify(toDoc(fields));
   if (id) {
-    await firestoreRequest(`apps/mahjong/config/rules/${id}`, {
+    await firestoreRequest(`apps/mahjong/rules/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...authHeader(idToken) },
       body,
     });
   } else {
-    await firestoreRequest("apps/mahjong/config/rules", {
+    await firestoreRequest("apps/mahjong/rules", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeader(idToken) },
       body,
@@ -115,7 +115,7 @@ export async function setRule(rule, idToken) {
 }
 
 export async function deleteRule(ruleId, idToken) {
-  await firestoreRequest(`apps/mahjong/config/rules/${ruleId}`, {
+  await firestoreRequest(`apps/mahjong/rules/${ruleId}`, {
     method: "DELETE",
     headers: { ...authHeader(idToken) },
   });
@@ -237,9 +237,22 @@ export async function setGuest(guest, idToken) {
 }
 
 // --- Users ---
-// Path: apps/mahjong/users/{uid}
+// Path: apps/mahjong/users/{uid}  ← 麻雀スタッツ（ランキング用）
 
 export async function getUsers(idToken) {
+  const data = await firestoreRequest(
+    "apps/mahjong/users",
+    { headers: { "Content-Type": "application/json", ...authHeader(idToken) } }
+  );
+  if (!data?.documents) return [];
+  return data.documents.map(doc => ({
+    id: docNameToId(doc.name),
+    ...fromDoc(doc),
+  }));
+}
+
+// kuma-appのusersコレクション（参加者選択用・status==approved）
+export async function getKumaMembers(idToken) {
   const body = JSON.stringify({
     structuredQuery: {
       from: [{ collectionId: "users" }],
@@ -289,4 +302,14 @@ export async function setUser(uid, userData, idToken) {
     headers: { "Content-Type": "application/json", ...authHeader(idToken) },
     body,
   });
+}
+
+export async function updateUserStats(uid, { displayName, finalScore }, idToken) {
+  const current = await getUser(uid, idToken) ?? {};
+  await setUser(uid, {
+    displayName,
+    totalPoints: (current.totalPoints ?? 0) + finalScore,
+    totalGames: (current.totalGames ?? 0) + 1,
+    lastPlayedAt: new Date().toISOString(),
+  }, idToken);
 }

@@ -55,6 +55,7 @@ export default function Settings({ user }) {
         await seedDefaultRules(user.idToken);
       }
     } catch (e) {
+      setRules([]);
       setError("ルールの読み込みに失敗しました: " + e.message);
     }
   }

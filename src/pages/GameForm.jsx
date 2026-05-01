@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getRules, getGames, setGame } from "../lib/firestoreRest";
+import { getRules, getGames, setGame, updateUserStats } from "../lib/firestoreRest";
 import { ChevronLeft, Calculator, Save, Check, AlertTriangle } from "lucide-react";
 
 // 同点は配列インデックス小さい方（上家）を上位とする
@@ -124,6 +124,12 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
         })),
       };
       await setGame(sessionId, game, user?.idToken);
+      // メンバーの累積スタッツを更新
+      await Promise.all(
+        game.results
+          .filter(r => r.type === "member")
+          .map(r => updateUserStats(r.uid, { displayName: r.name, finalScore: r.finalScore }, user?.idToken))
+      );
       onNavigate("session-detail", { sessionId });
     } catch (e) {
       setError(e.message);
