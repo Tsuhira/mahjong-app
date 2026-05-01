@@ -138,7 +138,7 @@ function CreateModal({ user, onCreated, onClose }) {
     setSelected(prev =>
       prev.some(p => p._key === key)
         ? prev.filter(p => p._key !== key)
-        : [...prev, { _key: key, type: "member", uid: m.id, displayName: m.displayName ?? m.id }]
+        : [...prev, { _key: key, type: "member", uid: m.id, displayName: m.name ?? m.displayName ?? m.id }]
     );
   }
 
@@ -224,7 +224,7 @@ function CreateModal({ user, onCreated, onClose }) {
                       onClick={() => toggleMember(m)}
                     >
                       {sel && <Check size={11} />}
-                      {m.displayName ?? m.id}
+                      {m.name ?? m.displayName ?? m.id}
                     </button>
                   );
                 })}
