@@ -57,8 +57,7 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
         setSelectedRule(rule);
         const gamePlayers = game.results.map(r => ({
           ...r,
-          name: r.name || sessionParticipants.find(p =>
-            (r.type === "member" ? p.uid === r.uid : p.guestId === r.guestId))?.name || "?",
+          name: r.name || (() => { const p = sessionParticipants.find(p => r.type === "member" ? p.uid === r.uid : p.guestId === r.guestId); return p?.displayName ?? p?.name ?? "?"; })(),
         }));
         setPlayers(gamePlayers);
         setRawScores(game.results.map(r => String(r.rawScore)));
@@ -115,7 +114,7 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
         createdAt: now,
         results: players.map((p, i) => ({
           ...(p.type === "member" ? { uid: p.uid } : { guestId: p.guestId }),
-          name: p.name,
+          name: p.displayName ?? p.name ?? "?",
           type: p.type,
           rawScore: preview.scores[i],
           rank: preview.ranks[i],
@@ -222,7 +221,7 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
                   style={{ ...s.playerCard, ...(selected ? s.playerCardSelected : {}), ...(canToggle ? { cursor: "pointer" } : {}) }}
                   onClick={canToggle ? () => togglePlayer(p) : undefined}
                 >
-                  <span style={s.playerName}>{p.name}</span>
+                  <span style={s.playerName}>{p.displayName ?? p.name ?? "?"}</span>
                   <span style={{ ...s.playerBadge, ...(p.type === "guest" ? s.guestBadge : {}) }}>
                     {p.type === "member" ? "メンバー" : "ゲスト"}
                   </span>
@@ -249,7 +248,7 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
           <div style={s.cardList}>
             {players.map((p, i) => (
               <div key={i} style={s.scoreRow}>
-                <span style={s.scorePlayerName}>{p.name}</span>
+                <span style={s.scorePlayerName}>{p.displayName ?? p.name ?? "?"}</span>
                 <div style={s.scoreInputs}>
                   <div style={s.inputGroup}>
                     <span style={s.inputLabel}>素点</span>
@@ -342,7 +341,7 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
                           <td style={s.td}>
                             {rank <= 3 ? MEDAL[rank - 1] : <span style={{ color: "#64748b" }}>{rank}位</span>}
                           </td>
-                          <td style={{ ...s.td, textAlign: "left", fontWeight: "500" }}>{p.name}</td>
+                          <td style={{ ...s.td, textAlign: "left", fontWeight: "500" }}>{p.displayName ?? p.name ?? "?"}</td>
                           <td style={s.td}>{preview.scores[i].toLocaleString()}</td>
                           <td style={{ ...s.td, fontWeight: "bold", color: fs >= 0 ? "#4ade80" : "#f87171" }}>
                             {fs > 0 ? "+" : ""}{fs}
