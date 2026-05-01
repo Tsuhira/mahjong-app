@@ -34,7 +34,7 @@ export default function App() {
       case "session-detail":
         return <SessionDetail sessionId={page.params?.sessionId} user={user} onNavigate={navigate} />;
       case "game-form":
-        return <GameForm sessionId={page.params?.sessionId} gameId={page.params?.gameId} user={user} onNavigate={navigate} />;
+        return <GameForm sessionId={page.params?.sessionId} gameId={page.params?.gameId} sessionParticipants={page.params?.sessionParticipants} user={user} onNavigate={navigate} />;
       case "ranking":
         return <Ranking user={user} />;
       case "settings":

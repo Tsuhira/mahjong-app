@@ -154,11 +154,12 @@ export async function setSession(session, idToken) {
       body,
     });
   } else {
-    await firestoreRequest("apps/mahjong/sessions", {
+    const doc = await firestoreRequest("apps/mahjong/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeader(idToken) },
       body,
     });
+    return docNameToId(doc.name);
   }
 }
 
