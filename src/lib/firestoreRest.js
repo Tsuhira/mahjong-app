@@ -250,3 +250,24 @@ export async function getUsers(idToken) {
     ...fromDoc(doc),
   }));
 }
+
+export async function getUser(uid, idToken) {
+  try {
+    const doc = await firestoreRequest(
+      `apps/mahjong/users/${uid}`,
+      { headers: { "Content-Type": "application/json", ...authHeader(idToken) } }
+    );
+    return { id: docNameToId(doc.name), ...fromDoc(doc) };
+  } catch {
+    return null;
+  }
+}
+
+export async function setUser(uid, userData, idToken) {
+  const body = JSON.stringify(toDoc(userData));
+  await firestoreRequest(`apps/mahjong/users/${uid}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...authHeader(idToken) },
+    body,
+  });
+}
