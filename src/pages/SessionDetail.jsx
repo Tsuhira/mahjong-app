@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { getSession, getGames, setSession, deleteGame, getUsers, setUser } from "../lib/firestoreRest";
-import { ArrowLeft, Plus, Check, Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { getSession, getGames, setSession, deleteGame, getUsers, setUser, getKumaMembers, getGuests, setGuest } from "../lib/firestoreRest";
+import { ArrowLeft, Plus, Check, Pencil, Trash2, ToggleLeft, ToggleRight, UserPlus, X } from "lucide-react";
 
 const c = {
   bg: "#0f172a",
@@ -19,6 +19,7 @@ export default function SessionDetail({ sessionId, user, onNavigate }) {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [settling, setSettling] = useState(false);
+  const [editingParticipants, setEditingParticipants] = useState(false);
 
   useEffect(() => {
     if (sessionId) loadData();
@@ -168,8 +169,29 @@ export default function SessionDetail({ sessionId, user, onNavigate }) {
       {/* Session info card */}
       <div style={s.infoCard}>
         <div style={s.infoDate}>{formatDate(session.date)}</div>
-        <div style={s.infoParticipants}>{participantLabel || "参加者なし"}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ ...s.infoParticipants, flex: 1 }}>{participantLabel || "参加者なし"}</div>
+          {user && !session.settled && (
+            <button style={s.editParticipantsBtn} onClick={() => setEditingParticipants(true)}>
+              <UserPlus size={13} /> 編集
+            </button>
+          )}
+        </div>
       </div>
+
+      {editingParticipants && (
+        <EditParticipantsModal
+          session={session}
+          games={games}
+          user={user}
+          onSaved={async (newParticipants) => {
+            await setSession({ ...session, participants: newParticipants }, user.idToken);
+            await loadData();
+            setEditingParticipants(false);
+          }}
+          onClose={() => setEditingParticipants(false)}
+        />
+      )}
 
       {/* Settled toggle */}
       <div style={s.settleRow}>
@@ -483,5 +505,215 @@ const s = {
     justifyContent: "center",
     padding: "24px 0",
     marginBottom: 8,
+  },
+  editParticipantsBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    background: "rgba(245,158,11,0.1)",
+    border: "1px solid rgba(245,158,11,0.3)",
+    borderRadius: 6,
+    color: c.amber,
+    fontSize: 12,
+    padding: "4px 8px",
+    cursor: "pointer",
+    flexShrink: 0,
+  },
+};
+
+function EditParticipantsModal({ session, games, user, onSaved, onClose }) {
+  const [members, setMembers] = useState([]);
+  const [guests, setGuests] = useState([]);
+  const [participants, setParticipants] = useState(session.participants ?? []);
+  const [newGuestName, setNewGuestName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  // ゲームに登場済みのキー（削除不可）
+  const usedKeys = new Set(
+    games.flatMap(g => (g.results ?? []).map(r =>
+      r.type === "member" ? `m:${r.uid}` : `g:${r.guestId}`
+    ))
+  );
+
+  useEffect(() => {
+    Promise.all([
+      getKumaMembers(user?.idToken).catch(() => []),
+      getGuests(user?.idToken).catch(() => []),
+    ]).then(([m, g]) => { setMembers(m); setGuests(g); });
+  }, []);
+
+  function key(p) {
+    return p.type === "member" ? `m:${p.uid}` : `g:${p.guestId}`;
+  }
+
+  function isIn(p) {
+    return participants.some(x => key(x) === key(p));
+  }
+
+  function addMember(m) {
+    if (isIn({ type: "member", uid: m.id })) return;
+    setParticipants(prev => [...prev, { type: "member", uid: m.id, displayName: m.name ?? m.displayName ?? m.id }]);
+  }
+
+  function addGuest(g) {
+    if (isIn({ type: "guest", guestId: g.id })) return;
+    setParticipants(prev => [...prev, { type: "guest", guestId: g.id, name: g.name }]);
+  }
+
+  function remove(p) {
+    if (usedKeys.has(key(p))) return;
+    setParticipants(prev => prev.filter(x => key(x) !== key(p)));
+  }
+
+  async function handleAddGuest() {
+    const name = newGuestName.trim();
+    if (!name) return;
+    try {
+      await setGuest({ name }, user?.idToken);
+      const updated = await getGuests(user?.idToken);
+      setGuests(updated);
+      const created = updated.find(g => g.name === name && !guests.some(og => og.id === g.id));
+      if (created) addGuest(created);
+      setNewGuestName("");
+    } catch (e) {
+      setError("ゲスト追加に失敗: " + e.message);
+    }
+  }
+
+  async function handleSave() {
+    if (participants.length < 2) { setError("2人以上必要です"); return; }
+    setSaving(true);
+    try {
+      await onSaved(participants);
+    } catch (e) {
+      setError("保存に失敗しました: " + e.message);
+      setSaving(false);
+    }
+  }
+
+  const addableMembers = members.filter(m => !isIn({ type: "member", uid: m.id }));
+  const addableGuests = guests.filter(g => !isIn({ type: "guest", guestId: g.id }));
+
+  return (
+    <div style={ms.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={ms.modal}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <h3 style={{ margin: 0, fontSize: 15, color: c.text }}>参加者を編集</h3>
+          <button style={ms.closeBtn} onClick={onClose}><X size={16} /></button>
+        </div>
+
+        {error && <p style={ms.error}>{error}</p>}
+
+        {/* 現在の参加者 */}
+        <p style={ms.label}>参加者（{participants.length}人）</p>
+        <div style={ms.chipRow}>
+          {participants.map((p, i) => {
+            const k = key(p);
+            const locked = usedKeys.has(k);
+            return (
+              <div key={i} style={{ ...ms.chip, ...(locked ? ms.chipLocked : {}) }}>
+                <span>{p.displayName ?? p.name ?? "?"}</span>
+                {!locked && (
+                  <button style={ms.removeBtn} onClick={() => remove(p)}><X size={10} /></button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* メンバー追加 */}
+        {addableMembers.length > 0 && (
+          <>
+            <p style={ms.label}>メンバーを追加</p>
+            <div style={ms.chipRow}>
+              {addableMembers.map(m => (
+                <button key={m.id} style={ms.addChip} onClick={() => addMember(m)}>
+                  + {m.name ?? m.displayName ?? m.id}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ゲスト追加 */}
+        {addableGuests.length > 0 && (
+          <>
+            <p style={ms.label}>ゲストを追加</p>
+            <div style={ms.chipRow}>
+              {addableGuests.map(g => (
+                <button key={g.id} style={ms.addChip} onClick={() => addGuest(g)}>
+                  + {g.name}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* 新規ゲスト */}
+        <p style={ms.label}>新規ゲスト</p>
+        <div style={{ display: "flex", gap: 6 }}>
+          <input
+            style={ms.input}
+            placeholder="名前を入力"
+            value={newGuestName}
+            onChange={e => setNewGuestName(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleAddGuest()}
+          />
+          <button style={ms.addGuestBtn} onClick={handleAddGuest} disabled={!newGuestName.trim()}>追加</button>
+        </div>
+
+        <button style={{ ...ms.saveBtn, opacity: saving ? 0.6 : 1 }} onClick={handleSave} disabled={saving}>
+          {saving ? "保存中…" : "保存する"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const ms = {
+  overlay: {
+    position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+    display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50,
+  },
+  modal: {
+    background: "#1e293b", borderRadius: "14px 14px 0 0",
+    border: "1px solid #334155", borderBottom: "none",
+    padding: "16px 16px 48px", width: "100%", maxWidth: 480,
+    maxHeight: "80vh", overflowY: "auto",
+    display: "flex", flexDirection: "column", gap: 8,
+  },
+  closeBtn: {
+    background: "none", border: "none", color: c.dim, cursor: "pointer", padding: 4,
+  },
+  label: { margin: "4px 0 4px", fontSize: 11, color: c.dim, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" },
+  error: { color: "#f87171", fontSize: 13, margin: 0, padding: "6px 10px", background: "rgba(248,113,113,0.1)", borderRadius: 6 },
+  chipRow: { display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 4 },
+  chip: {
+    display: "inline-flex", alignItems: "center", gap: 4,
+    background: "#0f172a", border: "1px solid #334155",
+    borderRadius: 20, padding: "4px 10px", fontSize: 13, color: c.text,
+  },
+  chipLocked: { opacity: 0.5 },
+  removeBtn: {
+    background: "none", border: "none", padding: 0, cursor: "pointer",
+    color: c.dim, display: "flex", alignItems: "center",
+  },
+  addChip: {
+    background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)",
+    borderRadius: 20, padding: "4px 10px", fontSize: 13, color: c.amber, cursor: "pointer",
+  },
+  input: {
+    flex: 1, background: "#0f172a", border: "1px solid #334155",
+    borderRadius: 8, color: c.text, fontSize: 14, padding: "8px 10px",
+  },
+  addGuestBtn: {
+    background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)",
+    borderRadius: 8, color: c.amber, fontSize: 13, padding: "8px 12px", cursor: "pointer",
+  },
+  saveBtn: {
+    marginTop: 8, background: c.amber, color: "#0f172a", border: "none",
+    borderRadius: 10, padding: "12px", fontSize: 15, fontWeight: 700,
+    cursor: "pointer", width: "100%",
   },
 };
