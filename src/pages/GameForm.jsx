@@ -83,9 +83,7 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
   function togglePlayer(p) {
     const alreadyIn = players.some(x => x === p);
     if (alreadyIn) {
-      if (players.length > selectedRule.playerCount) {
-        setPlayers(players.filter(x => x !== p));
-      }
+      setPlayers(players.filter(x => x !== p));
     } else if (players.length < selectedRule.playerCount) {
       setPlayers([...players, p]);
     }
@@ -207,19 +205,16 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
       {step === 1 && selectedRule && (
         <div style={s.section}>
           <p style={s.sectionHint}>
-            {sessionParticipants.length > selectedRule.playerCount
-              ? `対局する ${selectedRule.playerCount} 人を選択してください（現在 ${players.length}人選択中）`
-              : `参加者 ${selectedRule.playerCount} 人を確認してください`}
+            {`対局する ${selectedRule.playerCount} 人を選択してください（${players.length}/${selectedRule.playerCount}人）`}
           </p>
           <div style={s.cardList}>
             {sessionParticipants.map((p, i) => {
               const selected = players.includes(p);
-              const canToggle = sessionParticipants.length > selectedRule.playerCount;
               return (
                 <div
                   key={i}
-                  style={{ ...s.playerCard, ...(selected ? s.playerCardSelected : {}), ...(canToggle ? { cursor: "pointer" } : {}) }}
-                  onClick={canToggle ? () => togglePlayer(p) : undefined}
+                  style={{ ...s.playerCard, ...(selected ? s.playerCardSelected : {}), cursor: "pointer" }}
+                  onClick={() => togglePlayer(p)}
                 >
                   <span style={s.playerName}>{p.displayName ?? p.name ?? "?"}</span>
                   <span style={{ ...s.playerBadge, ...(p.type === "guest" ? s.guestBadge : {}) }}>
