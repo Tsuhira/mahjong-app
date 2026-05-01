@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getRules, getGames, setGame, getUser, setUser } from "../lib/firestoreRest";
+import { getRules, getGames, setGame } from "../lib/firestoreRest";
 import { ChevronLeft, Calculator, Save, Check, AlertTriangle } from "lucide-react";
 
 // 同点は配列インデックス小さい方（上家）を上位とする
@@ -124,23 +124,6 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
         })),
       };
       await setGame(sessionId, game, user?.idToken);
-
-      // メンバーのユーザー統計を更新
-      await Promise.allSettled(
-        players.map(async (p, i) => {
-          if (p.type !== "member" || !p.uid) return;
-          const current = await getUser(p.uid, user?.idToken);
-          const prevTotal = current?.totalPoints ?? 0;
-          const prevCount = current?.totalGames ?? 0;
-          await setUser(p.uid, {
-            displayName: p.name,
-            totalPoints: Math.round((prevTotal + preview.finalScores[i]) * 10) / 10,
-            totalGames: prevCount + 1,
-            lastPlayedAt: now,
-          }, user?.idToken);
-        })
-      );
-
       onNavigate("session-detail", { sessionId });
     } catch (e) {
       setError(e.message);
