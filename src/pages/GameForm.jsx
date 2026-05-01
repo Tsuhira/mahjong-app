@@ -24,6 +24,7 @@ function calcFinalScores(rawScores, rule) {
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 const STEPS = ["ルール選択", "参加者確認", "素点入力"];
+const SEATS = ["東家", "南家", "西家", "北家"];
 
 export default function GameForm({ sessionId, gameId, sessionParticipants = [], user, onNavigate }) {
   const [step, setStep] = useState(0);
@@ -71,10 +72,7 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
   function handleRuleSelect(rule) {
     setSelectedRule(rule);
     const count = rule.playerCount;
-    const initial = sessionParticipants.length <= count
-      ? [...sessionParticipants]
-      : sessionParticipants.slice(0, count);
-    setPlayers(initial);
+    setPlayers([]);
     setRawScores(new Array(count).fill(""));
     setChips(new Array(count).fill(""));
     setStep(1);
@@ -205,17 +203,33 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
       {step === 1 && selectedRule && (
         <div style={s.section}>
           <p style={s.sectionHint}>
-            {`対局する ${selectedRule.playerCount} 人を選択してください（${players.length}/${selectedRule.playerCount}人）`}
+            {`タップして席順に選択（${players.length}/${selectedRule.playerCount}人）`}
           </p>
+          {/* 選択済み席順プレビュー */}
+          {players.length > 0 && (
+            <div style={s.seatPreview}>
+              {players.map((p, i) => (
+                <div key={i} style={s.seatItem}>
+                  <span style={s.seatLabel}>{SEATS[i]}</span>
+                  <span style={s.seatName}>{p.displayName ?? p.name ?? "?"}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <div style={s.cardList}>
             {sessionParticipants.map((p, i) => {
-              const selected = players.includes(p);
+              const seatIdx = players.indexOf(p);
+              const selected = seatIdx !== -1;
               return (
                 <div
                   key={i}
                   style={{ ...s.playerCard, ...(selected ? s.playerCardSelected : {}), cursor: "pointer" }}
                   onClick={() => togglePlayer(p)}
                 >
+                  {selected
+                    ? <span style={s.seatBadge}>{SEATS[seatIdx]}</span>
+                    : <span style={s.seatBadgeEmpty}>{players.length < selectedRule.playerCount ? SEATS[players.length] : "—"}</span>
+                  }
                   <span style={s.playerName}>{p.displayName ?? p.name ?? "?"}</span>
                   <span style={{ ...s.playerBadge, ...(p.type === "guest" ? s.guestBadge : {}) }}>
                     {p.type === "member" ? "メンバー" : "ゲスト"}
@@ -243,7 +257,10 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
           <div style={s.cardList}>
             {players.map((p, i) => (
               <div key={i} style={s.scoreRow}>
-                <span style={s.scorePlayerName}>{p.displayName ?? p.name ?? "?"}</span>
+                <span style={s.scorePlayerName}>
+                  <span style={s.seatBadge}>{SEATS[i]}</span>
+                  {p.displayName ?? p.name ?? "?"}
+                </span>
                 <div style={s.scoreInputs}>
                   <div style={s.inputGroup}>
                     <span style={s.inputLabel}>素点</span>
@@ -315,6 +332,7 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
                 <thead>
                   <tr>
                     <th style={s.th}>順位</th>
+                    <th style={s.th}>席</th>
                     <th style={{ ...s.th, textAlign: "left" }}>名前</th>
                     <th style={s.th}>素点</th>
                     <th style={s.th}>最終点</th>
@@ -336,6 +354,7 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
                           <td style={s.td}>
                             {rank <= 3 ? MEDAL[rank - 1] : <span style={{ color: "#64748b" }}>{rank}位</span>}
                           </td>
+                          <td style={{ ...s.td, color: "#94a3b8", fontSize: 11 }}>{SEATS[i]}</td>
                           <td style={{ ...s.td, textAlign: "left", fontWeight: "500" }}>{p.displayName ?? p.name ?? "?"}</td>
                           <td style={s.td}>{preview.scores[i].toLocaleString()}</td>
                           <td style={{ ...s.td, fontWeight: "bold", color: fs >= 0 ? "#4ade80" : "#f87171" }}>
@@ -424,13 +443,33 @@ const s = {
   ruleName: { fontSize: 15, fontWeight: "bold", color: gold, marginBottom: 4 },
   ruleMeta: { fontSize: 12, color: "#64748b" },
 
+  seatPreview: {
+    display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 4,
+  },
+  seatItem: {
+    display: "flex", flexDirection: "column", alignItems: "center",
+    background: "#1e293b", border: `1px solid ${gold}`, borderRadius: 8,
+    padding: "6px 10px", minWidth: 52,
+  },
+  seatLabel: { fontSize: 13, fontWeight: 700, color: gold },
+  seatName: { fontSize: 11, color: "#f1f5f9", marginTop: 2 },
+  seatBadge: {
+    fontSize: 11, fontWeight: 700, color: gold,
+    background: "rgba(201,162,39,0.15)", border: "1px solid rgba(201,162,39,0.4)",
+    borderRadius: 4, padding: "1px 5px", flexShrink: 0,
+  },
+  seatBadgeEmpty: {
+    fontSize: 11, color: "#334155",
+    background: "#1e293b", border: "1px solid #334155",
+    borderRadius: 4, padding: "1px 5px", flexShrink: 0, minWidth: 24, textAlign: "center",
+  },
   playerCard: {
     background: "#1e293b", border: "1px solid #334155", borderRadius: 10,
     padding: "10px 14px", display: "flex", alignItems: "center", gap: 8,
     color: "#94a3b8",
   },
   playerCardSelected: { border: `1px solid ${gold}`, background: "#1c2820", color: "#f1f5f9" },
-  playerName: { fontSize: 14, fontWeight: "500", flex: 1 },
+  playerName: { fontSize: 14, fontWeight: "500", flex: 1, display: "flex", alignItems: "center", gap: 6 },
   playerBadge: {
     fontSize: 10, padding: "2px 6px", borderRadius: 4,
     background: "#1a5c3a", color: "#4ade80",
