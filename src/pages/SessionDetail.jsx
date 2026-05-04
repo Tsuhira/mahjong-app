@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getSession, getGames, setSession, deleteGame, getKumaMembers, getGuests, setGuest } from "../lib/firestoreRest";
+import { getSession, getGames, setSession, deleteSession, deleteGame, getKumaMembers, getGuests, setGuest } from "../lib/firestoreRest";
 import { ArrowLeft, Plus, Check, Pencil, Trash2, UserPlus, X, Receipt } from "lucide-react";
 
 const c = {
@@ -76,6 +76,17 @@ export default function SessionDetail({ sessionId, user, onNavigate }) {
     return Object.values(map).sort((a, b) => b.finalScore - a.finalScore);
   }
 
+  async function handleDeleteSession() {
+    if (!window.confirm("このセッションと全ての局を削除しますか？")) return;
+    try {
+      await Promise.all(games.map(g => deleteGame(sessionId, g.id, user.idToken)));
+      await deleteSession(sessionId, user.idToken);
+      onNavigate("sessions");
+    } catch (e) {
+      console.error("deleteSession failed", e);
+    }
+  }
+
   async function handleDeleteGame(gameId) {
     if (!window.confirm("この局を削除しますか？")) return;
     try {
@@ -125,13 +136,20 @@ export default function SessionDetail({ sessionId, user, onNavigate }) {
 
       {/* Session info card */}
       <div style={s.infoCard}>
-        <div style={s.infoDate}>{formatDate(session.date)}</div>
+        <div style={s.infoDate}>
+          {session.name ? `${session.name}（${formatDate(session.date)}）` : formatDate(session.date)}
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ ...s.infoParticipants, flex: 1 }}>{participantLabel || "参加者なし"}</div>
-          {user && !session.settled && (
-            <button style={s.editParticipantsBtn} onClick={() => setEditingParticipants(true)}>
-              <UserPlus size={13} /> 編集
-            </button>
+          {user && (
+            <div style={{ display: "flex", gap: 6 }}>
+              <button style={s.editParticipantsBtn} onClick={() => setEditingParticipants(true)}>
+                <UserPlus size={13} /> 編集
+              </button>
+              <button style={s.deleteSessionBtn} onClick={handleDeleteSession}>
+                <Trash2 size={13} />
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -141,8 +159,8 @@ export default function SessionDetail({ sessionId, user, onNavigate }) {
           session={session}
           games={games}
           user={user}
-          onSaved={async (newParticipants) => {
-            await setSession({ ...session, participants: newParticipants }, user.idToken);
+          onSaved={async (newParticipants, newName) => {
+            await setSession({ ...session, name: newName, participants: newParticipants }, user.idToken);
             await loadData();
             setEditingParticipants(false);
           }}
@@ -462,12 +480,24 @@ const s = {
     cursor: "pointer",
     flexShrink: 0,
   },
+  deleteSessionBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    background: "rgba(239,68,68,0.1)",
+    border: "1px solid rgba(239,68,68,0.3)",
+    borderRadius: 6,
+    color: c.red,
+    padding: "4px 7px",
+    cursor: "pointer",
+    flexShrink: 0,
+  },
 };
 
 function EditParticipantsModal({ session, games, user, onSaved, onClose }) {
   const [members, setMembers] = useState([]);
   const [guests, setGuests] = useState([]);
   const [participants, setParticipants] = useState(session.participants ?? []);
+  const [sessionName, setSessionName] = useState(session.name ?? "");
   const [newGuestName, setNewGuestName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -528,7 +558,7 @@ function EditParticipantsModal({ session, games, user, onSaved, onClose }) {
     if (participants.length < 2) { setError("2人以上必要です"); return; }
     setSaving(true);
     try {
-      await onSaved(participants);
+      await onSaved(participants, sessionName.trim());
     } catch (e) {
       setError("保存に失敗しました: " + e.message);
       setSaving(false);
@@ -542,11 +572,20 @@ function EditParticipantsModal({ session, games, user, onSaved, onClose }) {
     <div style={ms.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={ms.modal}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <h3 style={{ margin: 0, fontSize: 15, color: c.text }}>参加者を編集</h3>
+          <h3 style={{ margin: 0, fontSize: 15, color: c.text }}>セッションを編集</h3>
           <button style={ms.closeBtn} onClick={onClose}><X size={16} /></button>
         </div>
 
         {error && <p style={ms.error}>{error}</p>}
+
+        {/* セッション名 */}
+        <p style={ms.label}>セッション名（任意）</p>
+        <input
+          style={ms.input}
+          placeholder="例：正月麻雀、合宿など"
+          value={sessionName}
+          onChange={e => setSessionName(e.target.value)}
+        />
 
         {/* 現在の参加者 */}
         <p style={ms.label}>参加者（{participants.length}人）</p>

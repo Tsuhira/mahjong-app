@@ -85,7 +85,9 @@ export default function SessionList({ user, onNavigate }) {
                 onClick={() => onNavigate("session-detail", { sessionId: sess.id })}
               >
                 <div style={s.cardLeft}>
-                  <div style={s.cardDate}>{formatDate(sess.date)}</div>
+                  <div style={s.cardDate}>
+                    {sess.name ? `${sess.name}（${formatDate(sess.date)}）` : formatDate(sess.date)}
+                  </div>
                   <div style={s.cardNames}>{names || "参加者なし"}</div>
                 </div>
                 <div style={s.cardRight}>

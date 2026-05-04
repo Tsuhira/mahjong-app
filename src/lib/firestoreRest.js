@@ -136,6 +136,13 @@ export async function getSessions(idToken) {
   }));
 }
 
+export async function deleteSession(sessionId, idToken) {
+  await firestoreRequest(`apps/mahjong/sessions/${sessionId}`, {
+    method: "DELETE",
+    headers: { ...authHeader(idToken) },
+  });
+}
+
 export async function getSession(sessionId, idToken) {
   const doc = await firestoreRequest(
     `apps/mahjong/sessions/${sessionId}`,
