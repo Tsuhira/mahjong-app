@@ -196,6 +196,24 @@ export async function setGame(sessionId, game, idToken) {
   }
 }
 
+export async function getAllGames(idToken) {
+  const body = JSON.stringify({
+    structuredQuery: {
+      from: [{ collectionId: "games", allDescendants: true }],
+    },
+  });
+  const res = await fetch(`${BASE_URL}:runQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader(idToken) },
+    body,
+  });
+  const data = await res.json();
+  if (!Array.isArray(data)) return [];
+  return data
+    .filter(r => r.document)
+    .map(r => ({ id: docNameToId(r.document.name), ...fromDoc(r.document) }));
+}
+
 export async function deleteGame(sessionId, gameId, idToken) {
   await firestoreRequest(`apps/mahjong/sessions/${sessionId}/games/${gameId}`, {
     method: "DELETE",

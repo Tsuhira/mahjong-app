@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getUsers } from "../lib/firestoreRest";
+import { getAllGames } from "../lib/firestoreRest";
 import { Trophy, Calendar, Users, RefreshCw } from "lucide-react";
 
 const MEDAL = ["🥇", "🥈", "🥉"];
@@ -19,8 +19,24 @@ export default function Ranking({ user }) {
   function load() {
     setLoading(true);
     setError("");
-    getUsers(user?.idToken)
-      .then(u => { setUsers(u); setLoading(false); })
+    getAllGames(user?.idToken)
+      .then(games => {
+        const map = {};
+        for (const game of games) {
+          for (const r of (game.results ?? [])) {
+            if (r.type !== "member" || !r.uid) continue;
+            if (!map[r.uid]) map[r.uid] = { id: r.uid, displayName: r.name ?? "?", totalPoints: 0, totalGames: 0, lastPlayedAt: null };
+            map[r.uid].totalPoints += r.finalScore ?? 0;
+            map[r.uid].totalGames += 1;
+            if (!map[r.uid].lastPlayedAt || (game.createdAt ?? "") > map[r.uid].lastPlayedAt) {
+              map[r.uid].lastPlayedAt = game.createdAt ?? null;
+              if (r.name) map[r.uid].displayName = r.name;
+            }
+          }
+        }
+        setUsers(Object.values(map));
+        setLoading(false);
+      })
       .catch(e => { setError(e.message); setLoading(false); });
   }
 

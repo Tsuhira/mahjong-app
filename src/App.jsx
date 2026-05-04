@@ -24,6 +24,18 @@ export default function App() {
     );
   }
 
+  if (!user) {
+    return (
+      <div style={s.loading}>
+        <div style={s.loginBox}>
+          <div style={s.loginIcon}>🀄</div>
+          <p style={s.loginTitle}>麻雀対戦表</p>
+          <p style={s.loginDesc}>くまアプリからアクセスしてください</p>
+        </div>
+      </div>
+    );
+  }
+
   const topLevelPage = ["sessions", "ranking", "settings"].includes(page.name)
     ? page.name
     : "sessions";
@@ -67,4 +79,19 @@ const s = {
     color: "#94a3b8",
     fontSize: 14,
   },
+  loginBox: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+    padding: "32px 24px",
+    background: "#1e293b",
+    border: "1px solid #334155",
+    borderRadius: 16,
+    maxWidth: 280,
+    textAlign: "center",
+  },
+  loginIcon: { fontSize: 48 },
+  loginTitle: { margin: 0, fontSize: 18, fontWeight: 700, color: "#f1f5f9" },
+  loginDesc: { margin: 0, fontSize: 13, color: "#64748b", lineHeight: 1.6 },
 };
