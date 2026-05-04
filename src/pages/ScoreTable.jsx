@@ -53,7 +53,9 @@ function calcScore(isDealer, isTsumo, han, fu, honba) {
       const base = isDealer
         ? Math.ceil((bp * 6) / 100) * 100
         : Math.ceil((bp * 4) / 100) * 100;
-      return { isDealer, isTsumo, total: base + honbaBonus, honbaBonus };
+      const kiriagemangan = !isDealer && base === 7700;
+      const effectiveBase = kiriagemangan ? 8000 : base;
+      return { isDealer, isTsumo, total: effectiveBase + honbaBonus, honbaBonus, kiriagemangan, originalBase: kiriagemangan ? 7700 : null };
     }
   }
 }
@@ -122,6 +124,7 @@ export default function ScoreTable() {
       {/* 結果 */}
       <div style={s.resultCard}>
         {result.level && <div style={s.levelBadge}>{result.level}</div>}
+        {result.kiriagemangan && <div style={s.levelBadge}>切り上げ満貫</div>}
         <div style={s.totalRow}>
           <span style={s.totalLabel}>合計</span>
           <span style={s.totalVal}>{result.total.toLocaleString()}点</span>
@@ -137,7 +140,12 @@ export default function ScoreTable() {
             </>
           )
         ) : (
-          <Detail label="放銃者から" val={`${(result.total - result.honbaBonus).toLocaleString()}点`} />
+          <Detail
+            label="放銃者から"
+            val={result.kiriagemangan
+              ? `8000(7700)点`
+              : `${(result.total - result.honbaBonus).toLocaleString()}点`}
+          />
         )}
         {honba > 0 && (
           <Detail
