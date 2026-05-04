@@ -7,6 +7,7 @@ import GameForm from "./pages/GameForm";
 import Settlement from "./pages/Settlement";
 import Ranking from "./pages/Ranking";
 import Settings from "./pages/Settings";
+import ScoreTable from "./pages/ScoreTable";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -36,7 +37,7 @@ export default function App() {
     );
   }
 
-  const topLevelPage = ["sessions", "ranking", "settings"].includes(page.name)
+  const topLevelPage = ["sessions", "ranking", "score-table", "settings"].includes(page.name)
     ? page.name
     : "sessions";
 
@@ -52,6 +53,8 @@ export default function App() {
         return <Settlement sessionId={page.params?.sessionId} user={user} onNavigate={navigate} />;
       case "ranking":
         return <Ranking user={user} />;
+      case "score-table":
+        return <ScoreTable />;
       case "settings":
         return <Settings user={user} />;
       default:

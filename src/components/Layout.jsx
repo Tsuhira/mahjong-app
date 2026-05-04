@@ -2,6 +2,7 @@ export default function Layout({ page, onNavigate, children }) {
   const tabs = [
     { name: "sessions", label: "対戦一覧", icon: "📋" },
     { name: "ranking", label: "ランキング", icon: "🏆" },
+    { name: "score-table", label: "点数表", icon: "🧮" },
     { name: "settings", label: "設定", icon: "⚙️" },
   ];
 
@@ -37,7 +38,7 @@ const s = {
     width: "100%",
     maxWidth: 480,
     margin: "0 auto",
-    minHeight: "100dvh",
+    height: "100dvh",
     background: "#0f172a",
     color: "#f1f5f9",
     fontFamily: "'Hiragino Sans', 'Noto Sans JP', sans-serif",
