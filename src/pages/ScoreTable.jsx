@@ -53,9 +53,10 @@ function calcScore(isDealer, isTsumo, han, fu, honba) {
       const base = isDealer
         ? Math.ceil((bp * 6) / 100) * 100
         : Math.ceil((bp * 4) / 100) * 100;
-      const kiriagemangan = !isDealer && base === 7700;
-      const effectiveBase = kiriagemangan ? 8000 : base;
-      return { isDealer, isTsumo, total: effectiveBase + honbaBonus, honbaBonus, kiriagemangan, originalBase: kiriagemangan ? 7700 : null };
+      const kiriagemangan = (!isDealer && base === 7700) || (isDealer && base === 11600);
+      const manganBase = isDealer ? 12000 : 8000;
+      const effectiveBase = kiriagemangan ? manganBase : base;
+      return { isDealer, isTsumo, total: effectiveBase + honbaBonus, honbaBonus, kiriagemangan, originalBase: kiriagemangan ? base : null, manganBase: kiriagemangan ? manganBase : null };
     }
   }
 }
@@ -143,7 +144,7 @@ export default function ScoreTable() {
           <Detail
             label="放銃者から"
             val={result.kiriagemangan
-              ? `8000(7700)点`
+              ? `${result.manganBase.toLocaleString()}(${result.originalBase.toLocaleString()})点`
               : `${(result.total - result.honbaBonus).toLocaleString()}点`}
           />
         )}
