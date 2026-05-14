@@ -266,7 +266,7 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
                     <span style={s.inputLabel}>素点</span>
                     <input
                       type="number"
-                      inputMode="numeric"
+                      inputMode="decimal"
                       style={s.input}
                       value={rawScores[i]}
                       placeholder="0"
@@ -283,7 +283,7 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
                       <span style={s.inputLabel}>チップ</span>
                       <input
                         type="number"
-                        inputMode="numeric"
+                        inputMode="decimal"
                         style={{ ...s.input, width: 64 }}
                         value={chips[i]}
                         placeholder="0"

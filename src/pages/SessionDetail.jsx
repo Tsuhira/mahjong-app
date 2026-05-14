@@ -514,7 +514,7 @@ function EditParticipantsModal({ session, games, user, onSaved, onClose }) {
       getKumaMembers(user?.idToken).catch(() => []),
       getGuests(user?.idToken).catch(() => []),
     ]).then(([m, g]) => { setMembers(m); setGuests(g); });
-  }, []);
+  }, [user?.idToken]);
 
   function key(p) {
     return p.type === "member" ? `m:${p.uid}` : `g:${p.guestId}`;
