@@ -264,34 +264,62 @@ export default function GameForm({ sessionId, gameId, sessionParticipants = [], 
                 <div style={s.scoreInputs}>
                   <div style={s.inputGroup}>
                     <span style={s.inputLabel}>素点</span>
-                    <input
-                      type="text"
-                      style={s.input}
-                      value={rawScores[i]}
-                      placeholder="0"
-                      onChange={e => {
-                        const next = [...rawScores];
-                        next[i] = e.target.value;
-                        setRawScores(next);
-                        setPreview(null);
-                      }}
-                    />
+                    <div style={s.inputRow}>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        style={s.input}
+                        value={rawScores[i]}
+                        placeholder="0"
+                        onChange={e => {
+                          const next = [...rawScores];
+                          next[i] = e.target.value;
+                          setRawScores(next);
+                          setPreview(null);
+                        }}
+                      />
+                      <button
+                        style={s.signBtn}
+                        type="button"
+                        onClick={() => {
+                          const next = [...rawScores];
+                          const v = next[i];
+                          next[i] = v.startsWith("-") ? v.slice(1) : (v && v !== "0" ? "-" + v : v);
+                          setRawScores(next);
+                          setPreview(null);
+                        }}
+                      >±</button>
+                    </div>
                   </div>
                   {selectedRule.hasChip && (
                     <div style={s.inputGroup}>
                       <span style={s.inputLabel}>チップ</span>
-                      <input
-                        type="text"
-                        style={{ ...s.input, width: 64 }}
-                        value={chips[i]}
-                        placeholder="0"
-                        onChange={e => {
-                          const next = [...chips];
-                          next[i] = e.target.value;
-                          setChips(next);
-                          setPreview(null);
-                        }}
-                      />
+                      <div style={s.inputRow}>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          style={{ ...s.input, width: 52 }}
+                          value={chips[i]}
+                          placeholder="0"
+                          onChange={e => {
+                            const next = [...chips];
+                            next[i] = e.target.value;
+                            setChips(next);
+                            setPreview(null);
+                          }}
+                        />
+                        <button
+                          style={s.signBtn}
+                          type="button"
+                          onClick={() => {
+                            const next = [...chips];
+                            const v = next[i];
+                            next[i] = v.startsWith("-") ? v.slice(1) : (v && v !== "0" ? "-" + v : v);
+                            setChips(next);
+                            setPreview(null);
+                          }}
+                        >±</button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -489,10 +517,18 @@ const s = {
   scoreInputs: { display: "flex", gap: 8, flexShrink: 0 },
   inputGroup: { display: "flex", flexDirection: "column", gap: 2, alignItems: "flex-end" },
   inputLabel: { fontSize: 10, color: "#475569" },
+  inputRow: { display: "flex", gap: 4, alignItems: "center" },
   input: {
     width: 88, background: "#0f172a", border: "1px solid #334155",
     borderRadius: 6, padding: "6px 8px", color: "#f1f5f9",
     fontSize: 14, textAlign: "right",
+  },
+  signBtn: {
+    width: 32, height: 32, flexShrink: 0,
+    background: "#1e293b", border: "1px solid #334155",
+    borderRadius: 6, color: "#94a3b8", fontSize: 14,
+    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+    padding: 0,
   },
 
   totalBar: {
